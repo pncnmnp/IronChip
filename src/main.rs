@@ -522,10 +522,13 @@ fn main() {
     });
 
     let iter_threshold: u128 = 10;
+    let mut key: Option<u8> = None;
 
     let mut stdout = stdout();
     let _raw_mode = crossterm::terminal::enable_raw_mode().unwrap();
-    let mut key: Option<u8> = None;
+    // Clears the screen
+    // From: https://stackoverflow.com/a/34837038/7543474
+    print!("{}[2J", 27 as char);
 
     loop {
         let counter_value: u128 = *cycle_counter.lock().unwrap();
