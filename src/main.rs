@@ -544,7 +544,7 @@ fn key_handler(key: &mut Option<u8>) {
     // 4 5 6 D       Q W E R
     // 7 8 9 E       A S D F
     // A 0 B F       Z X C V
-    if event::poll(Duration::from_millis(1)).unwrap() {
+    if event::poll(Duration::from_millis(10)).unwrap() {
         if let Event::Key(key_event) = event::read().unwrap() {
             match key_event.code {
                 KeyCode::Char('1') => *key = Some(1),
