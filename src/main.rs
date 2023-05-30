@@ -1,9 +1,10 @@
+use crossterm::event::{self, Event, KeyCode};
 use num::traits::{WrappingAdd, WrappingSub};
 use num::{range, CheckedAdd, CheckedSub};
 use num_traits::Bounded;
 use rand::Rng;
 use std::fs::File;
-use std::io::{stdout, Read, Write};
+use std::io::{stdout, Read, Stdout, Write};
 use std::ops::Add;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -455,10 +456,10 @@ fn main() {
     let mut delay_timer: DelayTimer = DelayTimer::new();
     let mut sound_timer: SoundTimer = SoundTimer::new();
 
-    read_program("./test_opcode.ch8", &mut memory, &prog_counter);
+    read_program("./heart_monitor.ch8", &mut memory, &prog_counter);
     // println!("{:x?}", &memory[0x200..]);
 
-    let cycles_per_second: u128 = 70;
+    let cycles_per_second: u128 = 700;
     let cycle_duration: Duration = Duration::from_nanos(1_000_000_000 / cycles_per_second as u64);
 
     let cycle_counter: Arc<Mutex<u128>> = Arc::new(Mutex::new(0));
@@ -481,10 +482,14 @@ fn main() {
 
     let iter_threshold: u128 = 10;
 
+    let mut stdout = stdout();
+    let _raw_mode = crossterm::terminal::enable_raw_mode().unwrap();
+    let mut key: Option<u8> = None;
+
     loop {
         let counter_value: u128 = *cycle_counter.lock().unwrap();
         if counter_value > iter_threshold {
-            let key: Option<u8> = Some(0);
+            key_handler(&mut key);
             exec_next_opcode(
                 &mut memory,
                 &mut prog_counter,
@@ -498,7 +503,9 @@ fn main() {
             );
             prog_counter += 2;
 
-            print_display(&display);
+            // println!("{:?}", key);
+
+            print_display(&display, &mut stdout);
 
             // Reset the cycle counter
             *cycle_counter.lock().unwrap() = 0;
@@ -506,9 +513,44 @@ fn main() {
     }
 }
 
-fn print_display<const HEIGHT: usize, const WIDTH: usize>(display: &[[u8; HEIGHT]; WIDTH]) {
-    let mut stdout = stdout();
+fn key_handler(key: &mut Option<u8>) {
+    // Mapping from QWERTY to CHIP-8 format
+    // CHIP-8        QWERTY
+    // 1 2 3 C       1 2 3 4
+    // 4 5 6 D       Q W E R
+    // 7 8 9 E       A S D F
+    // A 0 B F       Z X C V
+    if event::poll(Duration::from_millis(10)).unwrap() {
+        if let Event::Key(key_event) = event::read().unwrap() {
+            match key_event.code {
+                KeyCode::Char('1') => *key = Some(1),
+                KeyCode::Char('2') => *key = Some(2),
+                KeyCode::Char('3') => *key = Some(3),
+                KeyCode::Char('4') => *key = Some(0xC),
+                KeyCode::Char('q') => *key = Some(4),
+                KeyCode::Char('w') => *key = Some(5),
+                KeyCode::Char('e') => *key = Some(6),
+                KeyCode::Char('r') => *key = Some(0xD),
+                KeyCode::Char('a') => *key = Some(7),
+                KeyCode::Char('s') => *key = Some(8),
+                KeyCode::Char('d') => *key = Some(9),
+                KeyCode::Char('f') => *key = Some(0xE),
+                KeyCode::Char('z') => *key = Some(0xA),
+                KeyCode::Char('x') => *key = Some(0),
+                KeyCode::Char('c') => *key = Some(0xB),
+                KeyCode::Char('v') => *key = Some(0xF),
+                _ => *key = None,
+            }
+            return;
+        }
+    }
+    *key = None;
+}
 
+fn print_display<const HEIGHT: usize, const WIDTH: usize>(
+    display: &[[u8; HEIGHT]; WIDTH],
+    stdout: &mut Stdout,
+) {
     // Move the cursor to the beginning of the terminal
     stdout.write_all(b"\x1B[1;1H").unwrap();
 
