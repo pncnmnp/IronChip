@@ -5,7 +5,7 @@ use num::{range, CheckedAdd, CheckedSub};
 use num_traits::Bounded;
 use rand::Rng;
 use std::fs::File;
-use std::io::{BufRead, BufReader, Read};
+use std::io::{stdout, BufRead, BufReader, Read, Write};
 use std::ops::{Add, Sub};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -187,7 +187,7 @@ fn exec_next_opcode<const HEIGHT: usize, const WIDTH: usize>(
     let msb = format!("{:02x}", memory[*prog_counter]);
     let lsb = format!("{:02x}", memory[*prog_counter + 1]);
     let opcode = msb + &lsb;
-    println!("{:?}", opcode);
+    // println!("{:?}", opcode);
 
     if &opcode == "00e0" {
         // 00E0: Clear the screen
@@ -519,20 +519,28 @@ fn main() {
             );
             prog_counter += 2;
 
-            for i in 0..32 {
-                for j in 0..64 {
-                    if display[j][i] == 0 {
-                        print!("_");
-                    } else {
-                        print!("1");
-                    }
-                }
-                println!();
-            }
-            println!();
+            print_display(&display);
 
             // Reset the cycle counter
             *cycle_counter.lock().unwrap() = 0;
         }
     }
+}
+
+fn print_display<const HEIGHT: usize, const WIDTH: usize>(display: &[[u8; HEIGHT]; WIDTH]) {
+    let mut stdout = stdout();
+
+    // Move the cursor to the beginning of the terminal
+    stdout.write_all(b"\x1B[1;1H").unwrap();
+
+    for i in 0..HEIGHT {
+        for j in 0..WIDTH {
+            let pixel = if display[j][i] == 1 { "1" } else { " " };
+            stdout.write_all(pixel.as_bytes()).unwrap();
+        }
+        stdout.write_all(b"\r\n").unwrap();
+    }
+
+    // Flush the output buffer to ensure that the output is immediately displayed
+    stdout.flush().unwrap();
 }
