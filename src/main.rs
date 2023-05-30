@@ -67,9 +67,8 @@ where
             Some(result) => self.value = result,
             None => {
                 let diff = self.value.wrapping_sub(&register);
-                let max = T::max_value();
                 self.carry = false;
-                max.wrapping_sub(&diff).wrapping_add(&T::from(1));
+                self.value = diff;
             }
         }
     }
