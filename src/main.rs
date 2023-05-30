@@ -4,6 +4,7 @@ use num::{range, CheckedAdd, CheckedSub};
 use num_traits::Bounded;
 use rand::Rng;
 use rodio::{source::SineWave, OutputStream, Sink, Source};
+use std::env;
 use std::fs::File;
 use std::io::{stdout, Read, Stdout, Write};
 use std::ops::Add;
@@ -491,7 +492,12 @@ fn main() {
     let mut delay_timer: DelayTimer = DelayTimer::new();
     let mut sound_timer: SoundTimer = SoundTimer::new();
 
-    read_program("./Pong.ch8", &mut memory, &prog_counter);
+    let program_file: Vec<String> = env::args().collect();
+    if program_file.len() >= 2 {
+        read_program(&program_file[1].as_str(), &mut memory, &prog_counter);
+    } else {
+        panic!("File name not passed as argument.");
+    }
     // println!("{:x?}", &memory[0x200..]);
 
     let cycles_per_second: u128 = 700;
