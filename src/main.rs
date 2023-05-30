@@ -3,6 +3,7 @@ use num::traits::{WrappingAdd, WrappingSub};
 use num::{range, CheckedAdd, CheckedSub};
 use num_traits::Bounded;
 use rand::Rng;
+use rodio::{source::SineWave, OutputStream, Sink, Source};
 use std::fs::File;
 use std::io::{stdout, Read, Stdout, Write};
 use std::ops::Add;
@@ -111,10 +112,18 @@ impl SoundTimer {
         self.timer = value
     }
 
-    fn _beep(&mut self) {
+    fn play(&mut self) {
         if self.timer > 1 {
-            // play sound
-            // simplifying the logic by making it zero right here
+            thread::spawn(|| {
+                let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+                let sink = Sink::try_new(&stream_handle).unwrap();
+
+                let source = SineWave::new(440.0)
+                    .take_duration(Duration::from_secs_f32(0.1))
+                    .amplify(0.20);
+                sink.append(source);
+                sink.sleep_until_end()
+            });
             self.timer = 0
         }
     }
@@ -416,6 +425,7 @@ fn exec_next_opcode<const HEIGHT: usize, const WIDTH: usize>(
             // FX18: Set the sound timer to the value of register VX
             let x = parse_opcode!(opcode, 1, 2);
             sound_timer.set_timer(gen_purp_reg[x].value);
+            sound_timer.play();
         } else if &opcode[2..] == "1e" {
             // FX1E: Add the value stored in register VX to register I
             let x = parse_opcode!(opcode, 1, 2);
@@ -481,7 +491,7 @@ fn main() {
     let mut delay_timer: DelayTimer = DelayTimer::new();
     let mut sound_timer: SoundTimer = SoundTimer::new();
 
-    read_program("./5-quirks.ch8", &mut memory, &prog_counter);
+    read_program("./Pong.ch8", &mut memory, &prog_counter);
     // println!("{:x?}", &memory[0x200..]);
 
     let cycles_per_second: u128 = 700;
