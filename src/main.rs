@@ -158,7 +158,7 @@ fn exec_next_opcode<const HEIGHT: usize, const WIDTH: usize>(
     stack: &mut Vec<u16>,
     gen_purp_reg: &mut [Register<u8>; 16],
     index_reg: &mut Register<u16>,
-    key: Option<u8>,
+    key: &mut Option<u8>,
     delay_timer: &mut DelayTimer,
     sound_timer: &mut SoundTimer,
 ) {
@@ -350,6 +350,7 @@ fn exec_next_opcode<const HEIGHT: usize, const WIDTH: usize>(
             false => gen_purp_reg[0xF].value = 0,
         }
     } else if &opcode[0..1] == "e" {
+        key_handler(key);
         if &opcode[2..] == "9e" {
             // EX9E: Skip the following instruction if
             //       the key corresponding to the hex value
@@ -384,15 +385,15 @@ fn exec_next_opcode<const HEIGHT: usize, const WIDTH: usize>(
             gen_purp_reg[x].value = delay_timer.read_timer();
         } else if &opcode[2..] == "0a" {
             // FX0A: Wait for a keypress and store the result in register VX
-            match key {
-                // If no key is pressed, come again at this instruction
-                // This will prevent a looping condition here
-                None => *prog_counter -= 2,
-                Some(_) => {
-                    let x = parse_opcode!(opcode, 1, 2);
-                    gen_purp_reg[x].value = key.unwrap();
+            loop {
+                key_handler(key);
+                match key {
+                    None => (),
+                    Some(_) => break,
                 }
             }
+            let x = parse_opcode!(opcode, 1, 2);
+            gen_purp_reg[x].value = key.unwrap();
         } else if &opcode[2..] == "15" {
             // FX15: Set the delay timer to the value of register VX
             let x = parse_opcode!(opcode, 1, 2);
@@ -499,7 +500,6 @@ fn main() {
     loop {
         let counter_value: u128 = *cycle_counter.lock().unwrap();
         if counter_value > iter_threshold {
-            key_handler(&mut key);
             exec_next_opcode(
                 &mut memory,
                 &mut prog_counter,
@@ -507,7 +507,7 @@ fn main() {
                 &mut stack,
                 &mut gen_purp_reg,
                 &mut index_reg,
-                key,
+                &mut key,
                 &mut delay_timer,
                 &mut sound_timer,
             );
