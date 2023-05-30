@@ -355,16 +355,26 @@ fn exec_next_opcode<const HEIGHT: usize, const WIDTH: usize>(
             //       the key corresponding to the hex value
             //       currently stored in register VX is pressed
             let x = parse_opcode!(opcode, 1, 2);
-            if key.unwrap() == gen_purp_reg[x].value {
-                *prog_counter += 2;
+            match key {
+                Some(_) => {
+                    if key.unwrap() == gen_purp_reg[x].value {
+                        *prog_counter += 2;
+                    }
+                }
+                None => (),
             }
-        } else if &opcode[2..] == "9e" {
+        } else if &opcode[2..] == "a1" {
             // EXA1: Skip the following instruction if
             //       the key corresponding to the hex value
             //       currently stored in register VX is not pressed
             let x = parse_opcode!(opcode, 1, 2);
-            if key.unwrap() != gen_purp_reg[x].value {
-                *prog_counter += 2;
+            match key {
+                Some(_) => {
+                    if key.unwrap() != gen_purp_reg[x].value {
+                        *prog_counter += 2;
+                    }
+                }
+                None => (),
             }
         }
     } else if &opcode[0..1] == "f" {
@@ -456,7 +466,7 @@ fn main() {
     let mut delay_timer: DelayTimer = DelayTimer::new();
     let mut sound_timer: SoundTimer = SoundTimer::new();
 
-    read_program("./heart_monitor.ch8", &mut memory, &prog_counter);
+    read_program("./6-keypad.ch8", &mut memory, &prog_counter);
     // println!("{:x?}", &memory[0x200..]);
 
     let cycles_per_second: u128 = 700;
