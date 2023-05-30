@@ -9,6 +9,7 @@ use std::ops::Add;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
+use tokio::time::interval;
 
 struct Register<T> {
     value: T,
@@ -86,6 +87,18 @@ impl DelayTimer {
 
     fn read_timer(&self) -> u8 {
         self.timer
+    }
+
+    #[tokio::main]
+    async fn decrement_timer(&mut self) {
+        let mut ticker = interval(Duration::from_millis(16));
+        loop {
+            if self.timer == 0 {
+                break;
+            }
+            ticker.tick().await;
+            self.timer -= 1;
+        }
     }
 }
 
@@ -397,7 +410,8 @@ fn exec_next_opcode<const HEIGHT: usize, const WIDTH: usize>(
         } else if &opcode[2..] == "15" {
             // FX15: Set the delay timer to the value of register VX
             let x = parse_opcode!(opcode, 1, 2);
-            delay_timer.set_timer(gen_purp_reg[x].value)
+            delay_timer.set_timer(gen_purp_reg[x].value);
+            delay_timer.decrement_timer();
         } else if &opcode[2..] == "18" {
             // FX18: Set the sound timer to the value of register VX
             let x = parse_opcode!(opcode, 1, 2);
@@ -467,7 +481,7 @@ fn main() {
     let mut delay_timer: DelayTimer = DelayTimer::new();
     let mut sound_timer: SoundTimer = SoundTimer::new();
 
-    read_program("./6-keypad.ch8", &mut memory, &prog_counter);
+    read_program("./5-quirks.ch8", &mut memory, &prog_counter);
     // println!("{:x?}", &memory[0x200..]);
 
     let cycles_per_second: u128 = 700;
