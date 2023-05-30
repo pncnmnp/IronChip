@@ -197,11 +197,13 @@ fn exec_next_opcode<const HEIGHT: usize, const WIDTH: usize>(
         *prog_counter = stack.pop().unwrap() as usize;
     } else if (&opcode[0..1] == "1") {
         // 1NNN: Jump to address NNN
-        *prog_counter = parse_opcode!(opcode, 1);
+        // We need to subtract by 2,
+        // else it will jump to the next instruction after NNN
+        *prog_counter = parse_opcode!(opcode, 1) - 2;
     } else if (&opcode[0..1] == "2") {
         // 2NNN: Execute subroutine starting at address NNN
         stack.push(*prog_counter as u16);
-        *prog_counter = parse_opcode!(opcode, 1);
+        *prog_counter = parse_opcode!(opcode, 1) - 2;
     } else if (&opcode[0..1] == "3") {
         // 3XNN: Skip the following instruction if
         //       the value of register VX equals NN
@@ -479,7 +481,7 @@ fn main() {
     read_program("./test_opcode.ch8", &mut memory, &prog_counter);
     // println!("{:x?}", &memory[0x200..]);
 
-    let cycles_per_second: u128 = 700;
+    let cycles_per_second: u128 = 70;
     let cycle_duration: Duration = Duration::from_nanos(1_000_000_000 / cycles_per_second as u64);
 
     let cycle_counter: Arc<Mutex<u128>> = Arc::new(Mutex::new(0));
