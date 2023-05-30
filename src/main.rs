@@ -187,6 +187,7 @@ fn exec_next_opcode<const HEIGHT: usize, const WIDTH: usize>(
     let msb = format!("{:02x}", memory[*prog_counter]);
     let lsb = format!("{:02x}", memory[*prog_counter + 1]);
     let opcode = msb + &lsb;
+    println!("{:?}", opcode);
 
     if &opcode == "00e0" {
         // 00E0: Clear the screen
@@ -304,7 +305,7 @@ fn exec_next_opcode<const HEIGHT: usize, const WIDTH: usize>(
 
             // Borrow does not need to be updated back
             gen_purp_reg[y].value = reg_y_val;
-        } else if (&opcode[3..4] == "E") {
+        } else if (&opcode[3..4] == "e") {
             // 8XYE: Store the value of register VY shifted left one bit in register VX
             //       Set register VF to the most significant bit prior to the shift
             //       VY is unchanged
@@ -321,22 +322,22 @@ fn exec_next_opcode<const HEIGHT: usize, const WIDTH: usize>(
         if gen_purp_reg[x].value != gen_purp_reg[y].value {
             *prog_counter += 2;
         }
-    } else if (&opcode[0..1] == "A") {
+    } else if (&opcode[0..1] == "a") {
         // ANNN: Store memory address NNN in register I
         let addr = parse_opcode!(opcode, 1) as u16;
         index_reg.value = addr;
-    } else if (&opcode[0..1] == "B") {
+    } else if (&opcode[0..1] == "b") {
         // BNNN: Jump to address NNN + V0
         let addr = parse_opcode!(opcode, 1);
         *prog_counter = (gen_purp_reg[0].value as usize) + addr;
-    } else if (&opcode[0..1] == "C") {
+    } else if (&opcode[0..1] == "c") {
         // CNNN: Set VX to a random number with a mask of NN
         let x = parse_opcode!(opcode, 1, 2);
         let nn = parse_opcode!(opcode, 2) as u8;
         let mut rng = rand::thread_rng();
         let rand_num: u8 = rng.gen_range(0..=255);
         gen_purp_reg[x].value = rand_num & nn;
-    } else if (&opcode[0..1] == "D") {
+    } else if (&opcode[0..1] == "d") {
         // DXYN: Draw a sprite at position VX, VY with
         //       N bytes of sprite data starting at the address stored in I
         //       Set VF to 01 if any set pixels are changed to unset,
@@ -356,18 +357,20 @@ fn exec_next_opcode<const HEIGHT: usize, const WIDTH: usize>(
         for i in range(0, sprite.len()) {
             for j in range(0, 8) {
                 let bit = (sprite[i] >> (7 - j)) & 1;
-                if (display[vx + i][vx + j] == 1) & (bit == 1) {
-                    collision = true;
+                if (vy + i < HEIGHT) & (vx + j < WIDTH) {
+                    if (display[vx + j][vy + i] == 1) & (bit == 1) {
+                        collision = true;
+                    }
+                    display[vx + j][vy + i] = display[vx + j][vy + i] ^ bit;
                 }
-                display[vy + i][vx + j] = display[vy + i][vx + j] ^ bit;
             }
         }
         match collision {
             true => gen_purp_reg[0xF].value = 1,
             false => gen_purp_reg[0xF].value = 0,
         }
-    } else if (&opcode[0..1] == "E") {
-        if (&opcode[2..] == "9E") {
+    } else if (&opcode[0..1] == "e") {
+        if (&opcode[2..] == "9e") {
             // EX9E: Skip the following instruction if
             //       the key corresponding to the hex value
             //       currently stored in register VX is pressed
@@ -375,7 +378,7 @@ fn exec_next_opcode<const HEIGHT: usize, const WIDTH: usize>(
             if key.unwrap() == gen_purp_reg[x].value {
                 *prog_counter += 2;
             }
-        } else if (&opcode[2..] == "9E") {
+        } else if (&opcode[2..] == "9e") {
             // EXA1: Skip the following instruction if
             //       the key corresponding to the hex value
             //       currently stored in register VX is not pressed
@@ -384,12 +387,12 @@ fn exec_next_opcode<const HEIGHT: usize, const WIDTH: usize>(
                 *prog_counter += 2;
             }
         }
-    } else if (&opcode[0..1] == "F") {
+    } else if (&opcode[0..1] == "f") {
         if (&opcode[2..] == "07") {
             // FX07: Store the current value of the delay timer in register VX
             let x = parse_opcode!(opcode, 1, 2);
             gen_purp_reg[x].value = delay_timer.read_timer();
-        } else if (&opcode[2..] == "0A") {
+        } else if (&opcode[2..] == "0a") {
             // FX0A: Wait for a keypress and store the result in register VX
             match key {
                 // If no key is pressed, come again at this instruction
@@ -408,7 +411,7 @@ fn exec_next_opcode<const HEIGHT: usize, const WIDTH: usize>(
             // FX18: Set the sound timer to the value of register VX
             let x = parse_opcode!(opcode, 1, 2);
             sound_timer.set_timer(gen_purp_reg[x].value);
-        } else if (&opcode[2..] == "1E") {
+        } else if (&opcode[2..] == "1e") {
             // FX1E: Add the value stored in register VX to register I
             let x = parse_opcode!(opcode, 1, 2);
             index_reg.value += gen_purp_reg[x].value as u16;
@@ -516,12 +519,20 @@ fn main() {
             );
             prog_counter += 2;
 
+            for i in 0..32 {
+                for j in 0..64 {
+                    if display[j][i] == 0 {
+                        print!("_");
+                    } else {
+                        print!("1");
+                    }
+                }
+                println!();
+            }
+            println!();
+
             // Reset the cycle counter
             *cycle_counter.lock().unwrap() = 0;
         }
     }
 }
-
-// Client side: Accept JSON, Key handling, and Display
-// Server side: POST request - Make JSON for display (send after every instruction), Accept pressed key
-//
