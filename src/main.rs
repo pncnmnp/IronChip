@@ -589,7 +589,7 @@ fn print_display<const HEIGHT: usize, const WIDTH: usize>(
 
     for i in 0..HEIGHT {
         for j in 0..WIDTH {
-            let pixel = if display[j][i] == 1 { "1" } else { " " };
+            let pixel = if display[j][i] == 1 { "\u{2588}" } else { " " };
             stdout.write_all(pixel.as_bytes()).unwrap();
         }
         stdout.write_all(b"\r\n").unwrap();
