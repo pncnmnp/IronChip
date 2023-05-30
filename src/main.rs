@@ -222,7 +222,7 @@ fn exec_next_opcode<const HEIGHT: usize, const WIDTH: usize>(
         // 5XY0: Skip the following instruction if
         //       the value of register VX is equal to the value of register VY
         let x = parse_opcode!(opcode, 1, 2);
-        let y = parse_opcode!(opcode, 1, 2);
+        let y = parse_opcode!(opcode, 2, 3);
         if gen_purp_reg[x].value == gen_purp_reg[y].value {
             *prog_counter += 2;
         }
@@ -476,7 +476,7 @@ fn main() {
     let mut delay_timer: DelayTimer = DelayTimer::new();
     let mut sound_timer: SoundTimer = SoundTimer::new();
 
-    read_program("./ibm.ch8", &mut memory, &prog_counter);
+    read_program("./test_opcode.ch8", &mut memory, &prog_counter);
     // println!("{:x?}", &memory[0x200..]);
 
     let cycles_per_second: u128 = 700;
