@@ -11,12 +11,6 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
-fn hex_to_int(hex: &str) -> u8 {
-    let without_prefix: &str = hex.trim_start_matches("0x");
-    let int_value: u8 = u8::from_str_radix(without_prefix, 16).unwrap();
-    return int_value;
-}
-
 struct Register<T> {
     value: T,
     carry: bool,
