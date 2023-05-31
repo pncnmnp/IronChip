@@ -604,6 +604,7 @@ fn print_display<const HEIGHT: usize, const WIDTH: usize>(
     display: &[[u8; HEIGHT]; WIDTH],
     stdout: &mut Stdout,
 ) {
+    execute!(stdout, cursor::Hide).unwrap();
     // Move the cursor to the beginning of the terminal
     stdout.write_all(b"\x1B[1;1H").unwrap();
 
