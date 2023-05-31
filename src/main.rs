@@ -1,4 +1,6 @@
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{
+    self, Event, KeyCode, KeyEventKind, KeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
+};
 use crossterm::{cursor, execute};
 use num::traits::{WrappingAdd, WrappingSub};
 use num::{range, CheckedAdd, CheckedSub};
@@ -595,6 +597,10 @@ fn key_handler(key: &mut Option<u8>) {
                 }
                 _ => *key = None,
             }
+            match key_event.kind {
+                KeyEventKind::Release => *key = None,
+                _ => (),
+            }
             return;
         }
     }
@@ -605,6 +611,11 @@ fn print_display<const HEIGHT: usize, const WIDTH: usize>(
     stdout: &mut Stdout,
 ) {
     execute!(stdout, cursor::Hide).unwrap();
+    execute!(
+        stdout,
+        PushKeyboardEnhancementFlags(KeyboardEnhancementFlags::REPORT_EVENT_TYPES)
+    )
+    .unwrap();
     // Move the cursor to the beginning of the terminal
     stdout.write_all(b"\x1B[1;1H").unwrap();
 
