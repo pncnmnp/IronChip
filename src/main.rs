@@ -1,16 +1,17 @@
 use crossterm::event::{self, Event, KeyCode};
+use crossterm::{cursor, execute};
 use num::traits::{WrappingAdd, WrappingSub};
 use num::{range, CheckedAdd, CheckedSub};
 use num_traits::Bounded;
 use rand::Rng;
 use rodio::{source::SineWave, OutputStream, Sink, Source};
-use std::env;
 use std::fs::File;
 use std::io::{stdout, Read, Stdout, Write};
 use std::ops::Add;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
+use std::{env, process};
 use tokio::time::interval;
 
 struct Register<T> {
@@ -585,6 +586,13 @@ fn key_handler(key: &mut Option<u8>) {
                 KeyCode::Char('x') => *key = Some(0),
                 KeyCode::Char('c') => *key = Some(0xB),
                 KeyCode::Char('v') => *key = Some(0xF),
+                KeyCode::Esc => {
+                    // Restore the terminal state and exit safely
+                    crossterm::terminal::disable_raw_mode().unwrap();
+                    let mut stdout = stdout();
+                    execute!(stdout, cursor::Show).unwrap();
+                    process::exit(0);
+                }
                 _ => *key = None,
             }
             return;
