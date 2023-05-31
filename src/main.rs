@@ -249,17 +249,20 @@ fn exec_next_opcode<const HEIGHT: usize, const WIDTH: usize>(
             // 8XY1: Set VX to VX OR VY
             let x = parse_opcode!(opcode, 1, 2);
             let y = parse_opcode!(opcode, 2, 3);
-            gen_purp_reg[x].value = gen_purp_reg[x].value | gen_purp_reg[y].value
+            gen_purp_reg[x].value = gen_purp_reg[x].value | gen_purp_reg[y].value;
+            gen_purp_reg[0xF].value = 0;
         } else if &opcode[3..4] == "2" {
             // 8XY2: Set VX to VX AND VY
             let x = parse_opcode!(opcode, 1, 2);
             let y = parse_opcode!(opcode, 2, 3);
-            gen_purp_reg[x].value = gen_purp_reg[x].value & gen_purp_reg[y].value
+            gen_purp_reg[x].value = gen_purp_reg[x].value & gen_purp_reg[y].value;
+            gen_purp_reg[0xF].value = 0;
         } else if &opcode[3..4] == "3" {
             // 8XY3: Set VX to VX XOR VY
             let x = parse_opcode!(opcode, 1, 2);
             let y = parse_opcode!(opcode, 2, 3);
-            gen_purp_reg[x].value = gen_purp_reg[x].value ^ gen_purp_reg[y].value
+            gen_purp_reg[x].value = gen_purp_reg[x].value ^ gen_purp_reg[y].value;
+            gen_purp_reg[0xF].value = 0;
         } else if &opcode[3..4] == "4" {
             // 8XY4: Add the value of register VY to register VX
             //       Set VF to 01 if a carry occurs
